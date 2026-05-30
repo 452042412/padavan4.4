@@ -1,42 +1,60 @@
-name: build-K2P
+name: build-R6800
 
 on: 
-  #push:
-   # branches:
-   # - "*"
-  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - "*"
+  workflow_dispatch:  # 手动触发编译
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        target: [K2P]
-        toolchain: [mipsel-linux-musl]
+        target: [R6800]          # 已改为 R6800
+        toolchain: [mipsel-linux-musl]  # R6800 正确工具链
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           ref: dev
-      - uses: hendrikmuhs/ccache-action@v1.2
+          fetch-depth: 0
+
+      - name: ccache cache
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.target }}-${{ matrix.toolchain }}
-      - uses: actions/setup-go@v4
+          max-size: "5G"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.23.0'
-          check-latest: true
-          cache: false
-      - uses: actions/setup-node@v3
+          go-version: '1.22'
+          check-latest: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          check-latest: true
-      - name: Prepare
+
+      - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install libtool-bin gperf python3-docutils autopoint gettext ccache
-      - name: Build
+          sudo apt update -y
+          sudo apt install -y build-essential cmake flex bison gawk git \
+          libtool-bin gperf python3-docutils autopoint gettext ccache \
+          zlib1g-dev libssl-dev libncurses5-dev unzip zip
+
+      - name: Build firmware
         run: |
-          make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }}
-      - uses: actions/upload-artifact@v4
+          make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-${{ matrix.toolchain }}
-          path: trunk/images/*.trx
+          name: ${{ matrix.target }}-firmware
+          path: |
+            trunk/images/*.chk
+            trunk/images/*.trx
+            trunk/images/*.bin
+          if-no-files-found: error

@@ -1,0 +1,60 @@
+name: build-R6800
+
+on: 
+  # push:
+  #   branches:
+  #     - "*"
+  workflow_dispatch:  # 手动触发编译
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target: [R6800]          # 已改为 R6800
+        toolchain: [mipsel-linux-musl]  # R6800 正确工具链
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: ccache cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.target }}-${{ matrix.toolchain }}
+          max-size: "5G"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y build-essential cmake flex bison gawk git \
+          libtool-bin gperf python3-docutils autopoint gettext ccache \
+          zlib1g-dev libssl-dev libncurses5-dev unzip zip
+
+      - name: Build firmware
+        run: |
+          make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-firmware
+          path: |
+            trunk/images/*.chk
+            trunk/images/*.trx
+            trunk/images/*.bin
+          if-no-files-found: error

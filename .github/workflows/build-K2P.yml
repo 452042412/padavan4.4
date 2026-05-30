@@ -1,37 +1,34 @@
 name: build-R6800
 
 on: 
-  # push:
-  #   branches:
-  #     - "*"
-  workflow_dispatch:  # 手动触发编译
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        target: [R6800]          # 已改为 R6800
-        toolchain: [mipsel-linux-musl]  # R6800 正确工具链
-
+        toolchain: [mipsel-linux-musl]
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: dev
+          # 推荐用支持 NETGEAR-BZV 的 chongshengB/padavan-4.4 分支
+          repository: chongshengB/padavan-4.4
+          ref: master
           fetch-depth: 0
 
       - name: ccache cache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.target }}-${{ matrix.toolchain }}
+          key: netgear-bzv-${{ matrix.toolchain }}
           max-size: "5G"
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          check-latest: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,16 +42,16 @@ jobs:
           libtool-bin gperf python3-docutils autopoint gettext ccache \
           zlib1g-dev libssl-dev libncurses5-dev unzip zip
 
+      # 关键：用 NETGEAR-BZV 作为编译目标
       - name: Build firmware
         run: |
-          make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s
+          make NETGEAR-BZV TOOLCHAIN=${{ matrix.toolchain }} V=s
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-firmware
+          name: R6800-firmware
           path: |
-            trunk/images/*.chk
-            trunk/images/*.trx
-            trunk/images/*.bin
+            trunk/images/NETGEAR-BZV*.trx
+            trunk/images/NETGEAR-BZV*.chk
           if-no-files-found: error

@@ -6,50 +6,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        target: [NETGEAR-BZV]
-        toolchain: [mipsel-linux-musl]
-
     steps:
-      - name: Checkout code
+      - name: Checkout 官方支持NETGEAR-BZV的源码
         uses: actions/checkout@v4
         with:
-          ref: dev
+          repository: chongshengB/padavan-4.4
+          ref: master
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-          cache: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          check-latest: false
-
-      - name: Install all build dependencies
+      - name: 安装完整依赖
         run: |
-          sudo apt update -y
-          sudo apt install -y build-essential cmake flex bison gawk git \
-          libtool-bin gperf python3-docutils autopoint gettext ccache \
-          zlib1g-dev libssl-dev libncurses5-dev unzip zip \
-          liblzma-dev liblzo2-dev libbz2-dev libelf-dev libc6-dev squashfs-tools \
-          binutils-dev lib32gcc-s1 lib32stdc++6 libc6-dev-i386 libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt update
+          sudo apt install -y build-essential cmake flex bison gawk git libtool-bin gperf python3-docutils autopoint gettext ccache zlib1g-dev libssl-dev libncurses5-dev unzip zip liblzma-dev liblzo2-dev libbz2-dev libelf-dev lib32gcc-s1 lib32stdc++6
 
-      - name: Build firmware with increased verbosity
+      - name: 开始编译固件
         run: |
-          # 增加日志输出，方便定位具体错误
-          make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=99
+          make NETGEAR-BZV TOOLCHAIN=mipsel-linux-musl V=99
 
-      - name: Upload firmware
+      - name: 上传固件
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-firmware
-          path: |
-            trunk/images/*.chk
-            trunk/images/*.trx
-            trunk/images/*.bin
-          if-no-files-found: error
+          name: NETGEAR-BZV-固件
+          path: trunk/images/*.chk

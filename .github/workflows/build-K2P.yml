@@ -30,19 +30,15 @@ jobs:
           node-version: 20
           check-latest: false
 
-      - name: Install all dependencies
+      - name: Install dependencies
         run: |
           sudo apt update -y
           sudo apt install -y build-essential cmake flex bison gawk git \
           libtool-bin gperf python3-docutils autopoint gettext ccache \
           zlib1g-dev libssl-dev libncurses5-dev unzip zip \
-          liblzma-dev liblzo2-dev libbz2-dev libelf-dev libc6-dev
+          liblzma-dev liblzo2-dev libbz2-dev libelf-dev libc6-dev squashfs-tools
 
-      # 关键：先编译所有工具链，再编译固件
-      - name: Build tools
-        run: |
-          make tools V=s
-
+      # 关键：直接编译目标，去掉不支持的 make tools 步骤
       - name: Build firmware
         run: |
           make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s

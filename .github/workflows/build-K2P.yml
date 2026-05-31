@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04  # 解决GLIBC版本问题
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         target: [NETGEAR-BZV]
@@ -18,35 +18,32 @@ jobs:
           ref: dev
           fetch-depth: 0
 
-      - name: ccache cache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: ${{ matrix.target }}-${{ matrix.toolchain }}
-          max-size: "5G"
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+          cache: false  # 关闭Go缓存，避免go.sum不存在的警告
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          check-latest: false
 
-      - name: Install dependencies (关键修复：补齐squashfs编译依赖)
+      - name: Install dependencies
         run: |
           sudo apt update -y
           sudo apt install -y build-essential cmake flex bison gawk git \
           libtool-bin gperf python3-docutils autopoint gettext ccache \
           zlib1g-dev libssl-dev libncurses5-dev unzip zip \
-          liblzma-dev liblzo2-dev libz-dev libbz2-dev libc6-dev \
-          squashfs-tools libelf-dev
+          liblzma-dev liblzo2-dev libz-dev libbz2-dev libc6-dev libelf-dev
+
+      - name: Build tools first (fix mksquashfs error)
+        run: |
+          make tools V=s
 
       - name: Build firmware
         run: |
-          # 先单独编译工具链，再编译固件，避免并行编译导致的依赖问题
-          make tools V=s
           make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s
 
       - name: Upload firmware

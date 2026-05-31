@@ -1,14 +1,14 @@
 name: build-NETGEAR-BZV
 
 on: 
-  workflow_dispatch:  # 手动触发编译
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04  # 关键修改：用24.04自带GLIBC 2.39
     strategy:
       matrix:
-        target: [NETGEAR-BZV]  # 正确型号！
+        target: [NETGEAR-BZV]
         toolchain: [mipsel-linux-musl]
 
     steps:
@@ -41,12 +41,10 @@ jobs:
           libtool-bin gperf python3-docutils autopoint gettext ccache \
           zlib1g-dev libssl-dev libncurses5-dev unzip zip
 
-      # 核心命令：已经改成正确的 NETGEAR-BZV
       - name: Build firmware
         run: |
           make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }} V=s
 
-      # 自动上传固件（chk / trx 都上传）
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:

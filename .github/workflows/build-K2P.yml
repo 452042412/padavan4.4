@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: false  # 关闭Go缓存，避免go.sum不存在的警告
+          cache: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,15 +30,16 @@ jobs:
           node-version: 20
           check-latest: false
 
-      - name: Install dependencies
+      - name: Install all dependencies
         run: |
           sudo apt update -y
           sudo apt install -y build-essential cmake flex bison gawk git \
           libtool-bin gperf python3-docutils autopoint gettext ccache \
           zlib1g-dev libssl-dev libncurses5-dev unzip zip \
-          liblzma-dev liblzo2-dev libz-dev libbz2-dev libc6-dev libelf-dev
+          liblzma-dev liblzo2-dev libbz2-dev libelf-dev libc6-dev
 
-      - name: Build tools first (fix mksquashfs error)
+      # 关键：先编译所有工具链，再编译固件
+      - name: Build tools
         run: |
           make tools V=s
 
